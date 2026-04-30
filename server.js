@@ -5,7 +5,6 @@ const { Pool } = require('pg');
 const axios = require('axios');
 const app = express();
 
-// الربط مع قاعدة البيانات (المتغير STORAGE_URL من Vercel)
 const pool = new Pool({
     connectionString: process.env.STORAGE_URL,
     ssl: { rejectUnauthorized: false }
@@ -19,76 +18,87 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// دالة لإنشاء الجدول في القاعدة إذا لم يكن موجوداً (تلقائياً)
+// تجهيز قاعدة البيانات المتكاملة
 const initDB = async () => {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            email TEXT UNIQUE,
-            password TEXT,
-            balance FLOAT DEFAULT 1000.0
-        );
-    `);
-    // إضافة حساب الأدمن إذا لم يكن موجوداً
-    await pool.query("INSERT INTO users (email, password, balance) VALUES ('admin@trade.com', '123', 1000) ON CONFLICT DO NOTHING");
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE,
+                password TEXT,
+                balance FLOAT DEFAULT 1000.0,
+                referrer_id INTEGER,
+                team_earnings FLOAT DEFAULT 0.0
+            );
+            CREATE TABLE IF NOT EXISTS transactions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                type TEXT, -- 'deposit' or 'withdraw'
+                amount FLOAT,
+                status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        await pool.query("INSERT INTO users (email, password, balance) VALUES ('admin@trade.com', '123', 1000) ON CONFLICT DO NOTHING");
+        console.log("Database Ready 🚀");
+    } catch (e) { console.error("DB Init Error:", e); }
 };
 initDB();
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// تسجيل الدخول من قاعدة البيانات
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
-        if (result.rows.length === 0) return res.status(401).json({ message: 'خطأ في البيانات' });
-        
-        const user = result.rows[0];
-        req.session.userId = user.id;
-        res.json({ user: { email: user.email, balance: user.balance } });
-    } catch (err) { res.status(500).send(err.message); }
-});
-
-// تنفيذ صفقة البوت بالأسعار الحقيقية
+// مسار التداول المطور بأسعار CryptoCompare
 app.post('/api/trade', async (req, res) => {
     const { amount, botPower } = req.body;
-    const userId = req.session.userId || 1; // 1 للأدمن افتراضياً
+    const userId = req.session.userId || 1;
 
     try {
-        // 1. جلب السعر من بينانس
-        const binanceResp = await axios.get('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
-        const currentPrice = parseFloat(binanceResp.data.price);
+        // جلب السعر الحقيقي (بديل بينانس)
+        const priceResp = await axios.get('https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD');
+        const btcPrice = priceResp.data.USD;
 
-        // 2. جلب رصيد المستخدم من القاعدة
         const userRes = await pool.query('SELECT balance FROM users WHERE id = $1', [userId]);
         let balance = userRes.rows[0].balance;
 
-        if (balance < amount) return res.status(400).json({ message: 'رصيدك قليل' });
+        if (balance < amount) return res.status(400).json({ message: 'رصيدك لا يكفي لهذه العملية' });
 
-        // 3. منطق الربح والخسارة بناءً على قوة البوت
-        const isWin = (Math.random() * 100) < (botPower || 70); 
-        let profit = 0;
+        // احتمالية الربح بناءً على قوة البوت
+        const isWin = (Math.random() * 100) < botPower;
         let message = "";
-
+        
         if (isWin) {
-            profit = amount * 0.2; // ربح 20%
+            const profit = amount * (botPower / 100);
             balance += profit;
-            message = `✅ السعر الحقيقي الآن ${currentPrice}$. البوت نجح في الصفقة وربحت ${profit}$!`;
+            message = `✅ السعر المباشر للبيتكوين ${btcPrice}$. البوت نفذ عملية ناجحة وربحت ${profit.toFixed(2)}$!`;
         } else {
             balance -= amount;
-            message = `❌ السعر الحقيقي الآن ${currentPrice}$. السوق كان متقلباً وخسرت ${amount}$`;
+            message = `❌ السعر المباشر ${btcPrice}$. تقلبات السوق أدت لخسارة ${amount.toFixed(2)}$.`;
         }
 
-        // 4. تحديث الرصيد في قاعدة البيانات (ليحفظ للأبد)
         await pool.query('UPDATE users SET balance = $1 WHERE id = $2', [balance, userId]);
-
         res.json({ newBalance: balance.toFixed(2), message: message });
+
     } catch (err) {
-        res.status(500).json({ message: "خطأ في السيرفر أو الاتصال ببينانس" });
+        res.status(500).json({ message: "خطأ في جلب بيانات السوق" });
     }
 });
 
+// مسار الإيداع والسحب (إرسال طلب)
+app.post('/api/request-transaction', async (req, res) => {
+    const { type, amount } = req.body;
+    const userId = req.session.userId || 1;
+    try {
+        await pool.query('INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)', [userId, type, amount]);
+        res.json({ message: "تم إرسال طلبك للإدارة بنجاح" });
+    } catch (e) { res.status(500).send("خطأ في الطلب"); }
+});
+
+// جلب بيانات الحساب كاملة
+app.get('/api/user-data', async (req, res) => {
+    const userId = req.session.userId || 1;
+    try {
+        const result = await pool.query('SELECT balance, team_earnings FROM users WHERE id = $1', [userId]);
+        res.json(result.rows[0]);
+    } catch (e) { res.status(500).send("خطأ"); }
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Quantum Server Running...'));
+app.listen(PORT, () => console.log('Quantum Server V2 Running...'));
