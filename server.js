@@ -4,14 +4,22 @@ const session = require('express-session');
 const app = express();
 
 app.use(express.json());
-app.use(express.static('public'));
+
+// التعديل الجوهري هنا لضمان عمل المسارات في Vercel
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(session({
     secret: 'ali-basra-secret-2026',
     resave: false,
     saveUninitialized: true
 }));
 
-// قاعدة بيانات وهمية (تختفي عند ريستارت السيرفر - اربط Postgres لاحقاً للحفظ الدائم)
+// هذا المسار سيقوم بسحب ملف index.html غصباً عن السيرفر
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// قاعدة بيانات وهمية
 let users = [
     { id: 1, email: "admin@trade.com", password: "123", balance: 1000, role: "admin" }
 ];
@@ -36,7 +44,7 @@ app.post('/api/register', (req, res) => {
     res.json({ user: newUser });
 });
 
-// --- وظيفة الأدمن (زيادة ونقصان الرصيد) ---
+// --- وظيفة الأدمن ---
 app.post('/api/admin/update-balance', (req, res) => {
     if (req.session.role !== "admin") return res.status(403).json({ message: 'غير مسموح لك' });
     const { targetEmail, newBalance } = req.body;
@@ -52,7 +60,7 @@ app.post('/api/trade', (req, res) => {
     const user = users.find(u => u.id === req.session.userId);
     if (!user) return res.status(401).json({ message: 'سجل دخولك' });
     
-    const { amount, win } = req.body; // المنطق هنا: الربح/الخسارة يتم تحديده من الواجهة أو السيرفر
+    const { amount, win } = req.body;
     if (user.balance < amount) return res.status(400).json({ message: 'رصيدك قليل' });
 
     user.balance += win ? (amount * 0.1) : -amount;
