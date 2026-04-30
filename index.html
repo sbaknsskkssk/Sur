@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Quantum Trade AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="auth-section" class="card">
+        <h2>الدخول للمنصة</h2>
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+        <input type="password" id="pass" placeholder="كلمة المرور">
+        <button onclick="login()">دخول</button>
+        <button onclick="register()">تسجيل جديد</button>
+    </div>
+
+    <div id="main-section" style="display:none;">
+        <div class="card">
+            <h3>مرحباً: <span id="user-display"></span></h3>
+            <h1 id="balance-display">0$</h1>
+        </div>
+
+        <div id="admin-panel" class="card" style="display:none; border: 2px solid gold;">
+            <h3>🛠 لوحة التحكم (أدمن)</h3>
+            <input type="text" id="target-email" placeholder="ايميل المستخدم">
+            <input type="number" id="new-bal" placeholder="الرصيد الجديد">
+            <button onclick="updateUserBalance()" style="background:gold; color:black;">تحديث الرصيد ✅</button>
+        </div>
+
+        <div class="card">
+            <input type="number" id="trade-amount" placeholder="مبلغ الصفقة">
+            <button onclick="trade('up')" style="background:green;">شراء 📈</button>
+            <button onclick="trade('down')" style="background:red;">بيع 📉</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
