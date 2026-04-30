@@ -3,143 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum AI Bots</title>
+    <title>Quantum AI Platform</title>
     <style>
-        body {
-            background-color: #0d1117;
-            color: #e6edf3;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background-color: #161b22;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            width: 360px;
-            border: 1px solid #30363d;
-        }
-        h2 { color: #58a6ff; text-align: center; margin-bottom: 25px; }
-        .balance-card {
-            background: linear-gradient(135deg, #238636, #2ea043);
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .balance-card span { font-size: 14px; opacity: 0.9; }
-        .balance-card div { font-size: 28px; font-weight: bold; }
+        :root { --bg: #0d1117; --card: #161b22; --blue: #1f6feb; --green: #238636; --text: #e6edf3; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding-bottom: 70px; }
+        .header { background: var(--card); padding: 15px; text-align: center; border-bottom: 1px solid #30363d; }
+        .page { display: none; padding: 20px; }
+        .active { display: block; }
         
-        label { font-size: 13px; color: #8b949e; margin-bottom: 5px; display: block; }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: white;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: 0.3s;
-            background-color: #1f6feb;
-            color: white;
-        }
-        button:hover { background-color: #388bfd; }
-        button:disabled { background-color: #21262d; color: #8b949e; cursor: not-allowed; }
+        /* كروت البوتات */
+        .bot-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .bot-info h4 { margin: 0; color: #58a6ff; }
+        .bot-info p { margin: 5px 0; font-size: 12px; color: #8b949e; }
+        .buy-btn { background: var(--blue); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
 
-        .log-container {
-            margin-top: 20px;
-            background: #010409;
-            border: 1px dashed #30363d;
-            padding: 15px;
-            border-radius: 10px;
-            min-height: 100px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .win { color: #39d353; font-weight: bold; border-right: 3px solid #39d353; padding-right: 10px; }
-        .loss { color: #f85149; font-weight: bold; border-right: 3px solid #f85149; padding-right: 10px; }
+        /* شريط التنقل السفلي */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #30363d; }
+        .nav-item { color: #8b949e; text-decoration: none; font-size: 12px; text-align: center; cursor: pointer; }
+        .nav-item.active-nav { color: var(--blue); }
+
+        .balance-box { background: linear-gradient(135deg, #238636, #2ea043); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🤖 بوتات Quantum AI</h2>
-        
-        <div class="balance-card">
-            <span>رصيدك الاستثماري</span>
-            <div id="balance-display">جاري التحميل...</div>
+
+    <div class="header">
+        <h3 id="page-title">الرئيسية</h3>
+    </div>
+
+    <div id="home" class="page active">
+        <div class="balance-box">
+            <span>إجمالي الرصيد</span>
+            <h2 id="user-balance">1000.00$</h2>
         </div>
-
-        <label>اختر البوت</label>
-        <select id="bot-select">
-            <option value="65">بوت السكالبينج (قوة 65%)</option>
-            <option value="85">بوت الذهب الخارق (قوة 85%)</option>
-            <option value="98">بوت الذكاء الاصطناعي (قوة 98%)</option>
-        </select>
-
-        <label>مبلغ الصفقة ($)</label>
-        <input type="number" id="trade-amount" placeholder="أدخل المبلغ..." value="100">
-
-        <button onclick="activateBot()" id="action-btn">تفعيل البوت الآن ⚡</button>
-
-        <div id="response-log" class="log-container">
-            <p style="color: #8b949e;">بانتظار الأوامر...</p>
+        <div style="display: flex; gap: 10px;">
+            <button class="buy-btn" style="flex: 1; background: var(--green);" onclick="showPage('deposit')">إيداع</button>
+            <button class="buy-btn" style="flex: 1; background: #da3633;" onclick="showPage('withdraw')">سحب</button>
         </div>
     </div>
 
+    <div id="trade" class="page">
+        <div id="bots-list">
+            <div class="bot-card">
+                <div class="bot-info">
+                    <h4>بوت المستوى 1</h4>
+                    <p>السعر: 10$ | صفقات: 2 يومياً | القوة: 16%</p>
+                </div>
+                <button class="buy-btn" onclick="buyBot(1, 10)">شراء</button>
+            </div>
+            </div>
+    </div>
+
+    <div id="team" class="page">
+        <h3>فريقك الاستثماري</h3>
+        <p>رابط الإحالة الخاص بك:</p>
+        <code id="ref-link">quantum.trade/ref/ali-salem</code>
+        <div class="bot-card" style="margin-top: 20px;">
+            <p>أعضاء الفريق: 0</p>
+            <p>أرباح الفريق: 0.00$</p>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item" onclick="showPage('home')">🏠<br>الرئيسية</div>
+        <div class="nav-item" onclick="showPage('trade')">🤖<br>البوتات</div>
+        <div class="nav-item" onclick="showPage('team')">👥<br>الفريق</div>
+        <div class="nav-item" onclick="showPage('account')">👤<br>الحساب</div>
+    </div>
+
     <script>
-        async function activateBot() {
-            const amount = document.getElementById('trade-amount').value;
-            const power = document.getElementById('bot-select').value;
-            const log = document.getElementById('response-log');
-            const btn = document.getElementById('action-btn');
-
-            if (!amount || amount <= 0) return alert("حدد مبلغ الصفقة");
-
-            btn.disabled = true;
-            btn.innerText = "جاري الاتصال بـ Binance...";
-            log.innerHTML = "<p>يتم الآن جلب السعر اللحظي وتحليل السوق...</p>";
-
-            try {
-                const res = await fetch('/api/trade', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ amount: parseFloat(amount), botPower: parseInt(power) })
-                });
-                const data = await res.json();
-
-                // انتظار وهمي ليعطي شعور التحليل
-                setTimeout(() => {
-                    document.getElementById('balance-display').innerText = data.newBalance + "$";
-                    log.innerHTML = `<div class="${data.message.includes('✅') ? 'win' : 'loss'}">${data.message}</div>`;
-                    btn.disabled = false;
-                    btn.innerText = "تفعيل البوت الآن ⚡";
-                }, 2000);
-
-            } catch (e) {
-                log.innerHTML = "<p class='loss'>فشل الاتصال بالسيرفر</p>";
-                btn.disabled = false;
-            }
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            // تحديث العنوان
+            const titles = {home: 'الرئيسية', trade: 'سوق البوتات', team: 'نظام الإحالة', account: 'الملف الشخصي'};
+            document.getElementById('page-title').innerText = titles[pageId] || 'Quantum';
         }
-        
-        // جلب الرصيد عند فتح الصفحة
-        window.onload = async () => {
-             // هنا يمكن إضافة كود لجلب الرصيد الأولي من السيرفر
-             document.getElementById('balance-display').innerText = "1000$";
-        };
+
+        function buyBot(level, price) {
+            alert(`سيتم خصم ${price}$ لتفعيل بوت المستوى ${level}`);
+            // هنا نرسل طلب للسيرفر
+        }
     </script>
 </body>
 </html>
