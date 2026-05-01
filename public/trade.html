@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum AI - منصة التداول</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; margin: 0; padding-bottom: 80px; }
+        .header { background: #161b22; padding: 20px; border-bottom: 1px solid #30363d; text-align: center; }
+        .balance-card { background: linear-gradient(45deg, #1f6feb, #238636); margin: 15px; padding: 20px; border-radius: 15px; text-align: center; }
+        .bot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .bot-card { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 12px; text-align: center; }
+        .bot-card h3 { color: #58a6ff; margin: 5px 0; }
+        .btn-trade { background: #238636; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; width: 100%; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
+        .nav-bar a { color: #8b949e; text-decoration: none; font-size: 14px; }
+        .active { color: #58a6ff !important; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Quantum Trade AI 🤖</h2>
+    </div>
+
+    <div class="balance-card">
+        <span>إجمالي الرصيد المتوفر</span>
+        <h1 id="user-balance">0.00$</h1>
+    </div>
+
+    <div style="padding: 10px;">
+        <h3>البوت المجاني (3% يومياً) 🎁</h3>
+        <div class="bot-card" style="width: 100%; box-sizing: border-box;">
+            <button class="btn-trade" onclick="runFreeTrade()">تشغيل البوت المجاني</button>
+        </div>
+    </div>
+
+    <div style="padding: 10px;">
+        <h3>بوتات كوانتم الاحترافية ⚡</h3>
+        <div class="bot-grid" id="bots-container">
+            </div>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="trade.html" class="active">🏠 الرئيسية</a>
+        <a href="team.html">👥 الفريق</a>
+        <a href="withdraw.html">💰 السحب</a>
+    </nav>
+
+    <script>
+        // توليد 9 بوتات بنسب مختلفة
+        const botsContainer = document.getElementById('bots-container');
+        for (let i = 1; i <= 9; i++) {
+            const profit = (i * 2.5).toFixed(1); // نسب ربح متغيرة
+            botsContainer.innerHTML += `
+                <div class="bot-card">
+                    <h3>Bot V${i}</h3>
+                    <p>ربح المتوقع: ${profit}%</p>
+                    <button class="btn-trade" onclick="runPaidTrade(${profit})">تشغيل</button>
+                </div>
+            `;
+        }
+
+        async function updateBalance() {
+            const res = await fetch('/api/auth/me'); // نستخدم مسار جلب البيانات
+            const data = await res.json();
+            if(data.success) {
+                document.getElementById('user-balance').innerText = data.balance.toFixed(2) + "$";
+            }
+        }
+
+        async function runFreeTrade() {
+            const res = await fetch('/api/trade/free-trade', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+            updateBalance();
+        }
+
+        async function runPaidTrade(power) {
+            const amount = prompt("أدخل مبلغ الصفقة:");
+            if(!amount) return;
+
+            const res = await fetch('/api/trade/execute', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ amount: parseFloat(amount), botPower: power })
+            });
+            const data = await res.json();
+            alert(data.message);
+            updateBalance();
+        }
+
+        window.onload = updateBalance;
+    </script>
+</body>
+</html>
