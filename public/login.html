@@ -54,22 +54,26 @@
         const password = document.getElementById('password').value;
         const referralCode = document.getElementById('referral').value;
 
-        if(!email || !password) return alert("يرجى ملء الحقول");
+        if(!email || !password) return alert("الرجاء إدخال الإيميل وكلمة المرور");
 
-        const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password, referralCode })
-        });
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password, referralCode })
+            });
 
-        const data = await res.json();
-        if(data.success) {
-            alert("تم التسجيل! يرجى التحقق من بريدك الإلكتروني.");
-            // حفظ الإيميل مؤقتاً لصفحة التحقق
-            localStorage.setItem('pendingEmail', email);
-            window.location.href = 'verify.html';
-        } else {
-            alert("خطأ: " + data.message);
+            const data = await res.json();
+            
+            if(res.ok && data.success) {
+                alert("تم التسجيل! كود التحقق هو: " + data.vCode); // عرض الكود للتجربة حالياً
+                localStorage.setItem('userEmail', email); 
+                window.location.href = 'verify.html';
+            } else {
+                alert("خطأ: " + (data.message || "فشل التسجيل"));
+            }
+        } catch (err) {
+            alert("فشل الاتصال بالسيرفر، تأكد من تشغيل المشروع");
         }
     }
 
@@ -77,19 +81,30 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
-        if(!email || !password) return alert("يرجى ملء الحقول");
+        if(!email || !password) return alert("الرجاء إدخال البيانات");
 
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password })
-        });
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password })
+            });
 
-        const data = await res.json();
-        if(data.success) {
-            window.location.href = 'trade.html';
-        } else {
-            alert("فشل الدخول: " + data.message);
+            const data = await res.json();
+
+            if(res.ok && data.success) {
+                // إذا لم يكن الحساب مفعل، نرسله لصفحة التحقق
+                if(data.needsVerification) {
+                    localStorage.setItem('userEmail', email);
+                    window.location.href = 'verify.html';
+                } else {
+                    window.location.href = 'trade.html';
+                }
+            } else {
+                alert("بيانات الدخول غير صحيحة");
+            }
+        } catch (err) {
+            alert("خطأ في السيرفر");
         }
     }
 </script>
