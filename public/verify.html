@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأكيد الحساب - Quantum AI</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .verify-card { background: #161b22; padding: 30px; border-radius: 15px; border: 1px solid #30363d; text-align: center; width: 90%; max-width: 400px; }
+        input { width: 100%; padding: 12px; margin: 20px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 8px; font-size: 18px; text-align: center; letter-spacing: 5px; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="verify-card">
+        <h2>تفعيل الحساب 🛡️</h2>
+        <p>أدخل الكود المكون من 6 أرقام المرسل إلى بريدك الإلكتروني</p>
+        <input type="text" id="v-code" placeholder="000000" maxlength="6">
+        <button class="btn" onclick="verifyAccount()">تأكيد الآن</button>
+        <p id="msg" style="margin-top: 15px; font-size: 14px;"></p>
+    </div>
+
+    <script>
+        async function verifyAccount() {
+            const code = document.getElementById('v-code').value;
+            const email = localStorage.getItem('userEmail'); // بنحفظ الإيميل وقت التسجيل
+            
+            const res = await fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, code })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert("تم التفعيل بنجاح! مبروك الـ 10$ هدية الترحيب");
+                window.location.href = 'trade.html';
+            } else {
+                document.getElementById('msg').innerText = "❌ " + data.message;
+                document.getElementById('msg').style.color = "#f85149";
+            }
+        }
+    </script>
+</body>
+</html>
