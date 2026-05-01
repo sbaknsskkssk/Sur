@@ -2,11 +2,11 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const { Pool } = require('pg');
-require('dotenv').config(); // لتأمين بيانات قاعدة البيانات
+require('dotenv').config(); 
 
 const app = express();
 
-// الربط مع قاعدة بيانات Vercel Postgres
+// 1. الربط مع قاعدة البيانات
 const pool = new Pool({
     connectionString: process.env.STORAGE_URL,
     ssl: { rejectUnauthorized: false }
@@ -21,37 +21,56 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 } 
 }));
 
-// دالة إنشاء الجداول المتطورة (للحسابات، الإحالات، والتحقق)
+// 2. إنشاء الجداول (دمجنا جدول السحب داخل الدالة لضمان الترتيب)
 const initDB = async () => {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            email TEXT UNIQUE,
-            password TEXT,
-            balance FLOAT DEFAULT 0.0,
-            v_code TEXT,
-            is_verified BOOLEAN DEFAULT false,
-            referred_by TEXT,
-            last_free_trade TEXT
-        );
-    `);
-    console.log("Database Tables Ready!");
+    try {
+        // جدول المستخدمين
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE,
+                password TEXT,
+                balance FLOAT DEFAULT 0.0,
+                v_code TEXT,
+                is_verified BOOLEAN DEFAULT false,
+                referred_by TEXT,
+                last_free_trade TEXT
+            );
+        `);
+        // جدول السحوبات
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS withdrawals (
+                id SERIAL PRIMARY KEY,
+                user_id INT,
+                amount FLOAT,
+                address TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log("✅ All Database Tables Ready!");
+    } catch (err) {
+        console.error("❌ Database Init Error:", err);
+    }
 };
 initDB();
 
-// --- ربط الملفات البرمجية (Routes) ---
+// 3. استيراد الملفات البرمجية (Routes)
 const authRoutes = require('./routes/auth');
 const tradeRoutes = require('./routes/trade');
 const referralRoutes = require('./routes/referral');
+const accountRoutes = require('./routes/account'); // إضافة ملف الحساب والمالية ✅
 
+// 4. تفعيل المسارات وربطها بالـ API
 app.use('/api/auth', authRoutes(pool));
 app.use('/api/trade', tradeRoutes(pool));
 app.use('/api/referral', referralRoutes(pool));
+app.use('/api/account', accountRoutes(pool)); // تفعيل أوامر الحساب (السحب/الإيداع) ✅
 
-// توجيه الصفحة الرئيسية لـ login
+// 5. توجيه الصفحات
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Quantum Master Server Running...'));
+app.listen(PORT, () => console.log('🚀 Quantum Master Server Running on Port ' + PORT));
