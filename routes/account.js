@@ -30,6 +30,27 @@ module.exports = (pool) => {
             res.status(500).json({ success: false, message: "خطأ في السيرفر" });
         }
     });
+// جلب جميع طلبات السحب للأدمن
+router.get('/admin/withdrawals', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT withdrawals.*, users.email 
+            FROM withdrawals 
+            JOIN users ON withdrawals.user_id = users.id 
+            ORDER BY created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) { res.status(500).send(err.message); }
+});
 
+// تحديث حالة السحب (موافقة/رفض)
+router.post('/admin/update-withdrawal', async (req, res) => {
+    const { id, status } = req.body;
+    try {
+        await pool.query('UPDATE withdrawals SET status = $1 WHERE id = $2', [status, id]);
+        res.json({ success: true, message: "تم تحديث الحالة بنجاح" });
+    } catch (err) { res.status(500).send(err.message); }
+});
+    
     return router;
 };
