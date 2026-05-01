@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نظام الإحالة - Quantum AI</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; text-align: center; margin: 0; }
+        .referral-header { background: #161b22; padding: 30px; border-bottom: 2px solid #1f6feb; }
+        .link-box { background: #010409; border: 1px dashed #58a6ff; padding: 15px; margin: 20px auto; width: 85%; border-radius: 8px; cursor: pointer; color: #58a6ff; overflow-wrap: break-word; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .stat-card { background: #161b22; padding: 20px; border-radius: 12px; border: 1px solid #30363d; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #161b22; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #30363d; }
+    </style>
+</head>
+<body>
+
+    <div class="referral-header">
+        <h2>نظام الإحالة الاستثماري 👥</h2>
+        <p>شارك رابطك واربح 10% عمولة من إيداعات فريقك</p>
+        <div class="link-box" id="my-link" onclick="copyLink()">جاري إنشاء الرابط...</div>
+        <span>اضغط على الرابط أعلاه للنسخ</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3 id="team-count">0</h3>
+            <span>أعضاء الفريق</span>
+        </div>
+        <div class="stat-card">
+            <h3 id="team-profit">0.00$</h3>
+            <span>أرباح الإحالة</span>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="trade.html" style="color: #8b949e; text-decoration: none;">🏠 الرئيسية</a>
+        <a href="team.html" style="color: #58a6ff; text-decoration: none;">👥 الفريق</a>
+        <a href="withdraw.html" style="color: #8b949e; text-decoration: none;">💰 السحب</a>
+    </nav>
+
+    <script>
+        async function loadTeamData() {
+            // جلب الرابط بناءً على ID المستخدم من الجلسة
+            const userRes = await fetch('/api/auth/me');
+            const userData = await userRes.json();
+            const fullLink = window.location.origin + "/register.html?ref=" + userData.userId;
+            document.getElementById('my-link').innerText = fullLink;
+
+            // جلب إحصائيات الفريق
+            const res = await fetch('/api/referral/my-team');
+            const data = await res.json();
+            if(data.success) {
+                document.getElementById('team-count').innerText = data.count;
+                document.getElementById('team-profit').innerText = data.totalProfit + "$";
+            }
+        }
+
+        function copyLink() {
+            const link = document.getElementById('my-link').innerText;
+            navigator.clipboard.writeText(link);
+            alert("تم نسخ رابط الإحالة بنجاح!");
+        }
+
+        window.onload = loadTeamData;
+    </script>
+</body>
+</html>
