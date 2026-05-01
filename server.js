@@ -73,4 +73,9 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// هذا الكود يخبر السيرفر: إذا فتح المستخدم الرابط الرئيسي، وجهه لصفحة الدخول
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
 app.listen(PORT, () => console.log('🚀 Quantum Master Server Running on Port ' + PORT));
