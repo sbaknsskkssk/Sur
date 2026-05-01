@@ -6,14 +6,16 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. الربط مع قاعدة البيانات
+// 1. إعدادات قاعدة البيانات
 const pool = new Pool({
     connectionString: process.env.STORAGE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
 app.use(express.json());
+// تعريف مجلد الملفات العامة (الصور والصفحات)
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(session({
     secret: 'ali-basra-secret-2026',
     resave: false,
@@ -21,10 +23,9 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 } 
 }));
 
-// 2. إنشاء الجداول (دمجنا جدول السحب داخل الدالة لضمان الترتيب)
+// 2. دالة تهيئة الجداول
 const initDB = async () => {
     try {
-        // جدول المستخدمين
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -36,9 +37,6 @@ const initDB = async () => {
                 referred_by TEXT,
                 last_free_trade TEXT
             );
-        `);
-        // جدول السحوبات
-        await pool.query(`
             CREATE TABLE IF NOT EXISTS withdrawals (
                 id SERIAL PRIMARY KEY,
                 user_id INT,
@@ -48,34 +46,29 @@ const initDB = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        console.log("✅ All Database Tables Ready!");
+        console.log("✅ Database Tables Ready!");
     } catch (err) {
-        console.error("❌ Database Init Error:", err);
+        console.error("❌ Database Error:", err);
     }
 };
 initDB();
 
-// 3. استيراد الملفات البرمجية (Routes)
+// 3. ربط المسارات (Routes)
 const authRoutes = require('./routes/auth');
 const tradeRoutes = require('./routes/trade');
 const referralRoutes = require('./routes/referral');
-const accountRoutes = require('./routes/account'); // إضافة ملف الحساب والمالية ✅
+const accountRoutes = require('./routes/account');
 
-// 4. تفعيل المسارات وربطها بالـ API
 app.use('/api/auth', authRoutes(pool));
 app.use('/api/trade', tradeRoutes(pool));
 app.use('/api/referral', referralRoutes(pool));
-app.use('/api/account', accountRoutes(pool)); // تفعيل أوامر الحساب (السحب/الإيداع) ✅
+app.use('/api/account', accountRoutes(pool));
 
-// 5. توجيه الصفحات
+// 4. توجيه الصفحة الرئيسية (هذا يحل مشكلة Not Found)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+// تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
-// هذا الكود يخبر السيرفر: إذا فتح المستخدم الرابط الرئيسي، وجهه لصفحة الدخول
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-app.listen(PORT, () => console.log('🚀 Quantum Master Server Running on Port ' + PORT));
+app.listen(PORT, () => console.log('🚀 Quantum Master Server Running...'));
