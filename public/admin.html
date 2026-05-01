@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم الأدمن - Quantum</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #161b22; }
+        th, td { border: 1px solid #30363d; padding: 12px; text-align: center; }
+        th { background: #1f6feb; }
+        .btn-approve { background: #238636; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-reject { background: #f85149; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .status-pending { color: #e3b341; }
+        .status-approved { color: #39d353; }
+    </style>
+</head>
+<body>
+    <h1>إدارة طلبات السحب 💰</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>المستخدم</th>
+                <th>المبلغ</th>
+                <th>المحفظة</th>
+                <th>الحالة</th>
+                <th>الإجراء</th>
+            </tr>
+        </thead>
+        <tbody id="withdrawals-list">
+            </tbody>
+    </table>
+
+    <script>
+        async function loadWithdrawals() {
+            const res = await fetch('/api/account/admin/withdrawals');
+            const data = await res.json();
+            const list = document.getElementById('withdrawals-list');
+            list.innerHTML = '';
+
+            data.forEach(w => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${w.email}</td>
+                        <td>${w.amount}$</td>
+                        <td style="font-size:10px;">${w.address}</td>
+                        <td class="status-${w.status}">${w.status}</td>
+                        <td>
+                            ${w.status === 'pending' ? `
+                                <button class="btn-approve" onclick="updateStatus(${w.id}, 'approved')">موافقة</button>
+                                <button class="btn-reject" onclick="updateStatus(${w.id}, 'rejected')">رفض</button>
+                            ` : 'تمت المعالجة'}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function updateStatus(id, status) {
+            await fetch('/api/account/admin/update-withdrawal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, status })
+            });
+            loadWithdrawals();
+        }
+
+        window.onload = loadWithdrawals;
+    </script>
+</body>
+</html>
