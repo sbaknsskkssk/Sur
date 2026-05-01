@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>سحب الأرباح - Quantum AI</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; max-width: 400px; margin: auto; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 8px; box-sizing: border-box; }
+        .btn-withdraw { background: #238636; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .info { font-size: 12px; color: #8b949e; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>سحب USDT (TRC20) 💰</h2>
+        <p>الحد الأدنى للسحب: 10.00$</p>
+        
+        <input type="number" id="w-amount" placeholder="المبلغ بالسحب ($)">
+        <input type="text" id="w-address" placeholder="عنوان محفظة USDT (TRC20)">
+        
+        <button class="btn-withdraw" onclick="submitWithdraw()">تأكيد طلب السحب</button>
+        
+        <p class="info">ملاحظة: سيتم خصم المبلغ من رصيدك فوراً وتحويله بعد مراجعة الإدارة.</p>
+    </div>
+
+    <script>
+        async function submitWithdraw() {
+            const amount = document.getElementById('w-amount').value;
+            const address = document.getElementById('w-address').value;
+
+            if(!amount || !address) return alert("يرجى ملء جميع الحقول");
+
+            const res = await fetch('/api/account/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ amount: parseFloat(amount), address })
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                alert(data.message);
+                window.location.href = 'trade.html';
+            } else {
+                alert("❌ " + data.message);
+            }
+        }
+    </script>
+</body>
+</html>
