@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum AI - الدخول</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-container { background: #161b22; padding: 30px; border-radius: 15px; border: 1px solid #30363d; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #58a6ff; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 8px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #1f6feb; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; color: white; }
+        .btn-login { background: #238636; }
+        .btn-login:hover { background: #2ea043; }
+        .btn-reg { background: #1f6feb; display: none; }
+        .btn-reg:hover { background: #388bfd; }
+        .toggle-text { text-align: center; margin-top: 15px; font-size: 14px; color: #8b949e; cursor: pointer; }
+        .toggle-text span { color: #58a6ff; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div id="auth-form">
+        <h2 id="form-title">تسجيل الدخول</h2>
+        
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+        <input type="password" id="password" placeholder="كلمة المرور">
+        <input type="text" id="referral" placeholder="كود الإحالة (اختياري)" style="display: none;">
+
+        <button id="login-btn" class="btn btn-login" onclick="handleLogin()">دخول للمنصة</button>
+        <button id="reg-btn" class="btn btn-reg" onclick="handleRegister()">إنشاء حساب</button>
+
+        <p class="toggle-text" id="toggle-link" onclick="toggleForm()">ليس لديك حساب؟ <span>سجل الآن</span></p>
+    </div>
+</div>
+
+<script>
+    let isLogin = true;
+
+    function toggleForm() {
+        isLogin = !isLogin;
+        document.getElementById('form-title').innerText = isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+        document.getElementById('login-btn').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('reg-btn').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('referral').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('toggle-link').innerHTML = isLogin ? 
+            'ليس لديك حساب؟ <span>سجل الآن</span>' : 'لديك حساب بالفعل؟ <span>سجل دخولك</span>';
+    }
+
+    async function handleRegister() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const referralCode = document.getElementById('referral').value;
+
+        if(!email || !password) return alert("يرجى ملء الحقول");
+
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password, referralCode })
+        });
+
+        const data = await res.json();
+        if(data.success) {
+            alert("تم التسجيل! يرجى التحقق من بريدك الإلكتروني.");
+            // حفظ الإيميل مؤقتاً لصفحة التحقق
+            localStorage.setItem('pendingEmail', email);
+            window.location.href = 'verify.html';
+        } else {
+            alert("خطأ: " + data.message);
+        }
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        if(!email || !password) return alert("يرجى ملء الحقول");
+
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if(data.success) {
+            window.location.href = 'trade.html';
+        } else {
+            alert("فشل الدخول: " + data.message);
+        }
+    }
+</script>
+
+</body>
+</html>
